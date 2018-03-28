@@ -35,7 +35,7 @@ type Graph<'Vertex,'Label,'Edge> when 'Vertex: comparison =
     Map<'Vertex, MContext<'Vertex,'Label,'Edge>>
 
 ///Lenses for working with contexts
-module Lenses = 
+module Lenses =
     /// Lens for predecessors in a context
     let pred_ : Lens<Context<'Vertex,_,'Edge>, Adj<'Vertex,'Edge>> =
         (fun (p, _, _, _) -> p), (fun p (_, v, l, s) -> (p, v, l, s))
@@ -62,7 +62,7 @@ module Graph =
     (* Transition functions *)
 
     let private fromAdj<'Vertex,'Edge when 'Vertex: comparison> : Adj<'Vertex,'Edge> -> MAdj<'Vertex,'Edge> =
-        Map.ofList 
+        Map.ofList
 
     let private fromContext<'Vertex,'Label,'Edge when 'Vertex: comparison> : Context<'Vertex,'Label,'Edge> -> MContext<'Vertex,'Label,'Edge> =
         fun (p, _, l, s) -> fromAdj p, l, fromAdj s
@@ -79,23 +79,23 @@ module Graph =
 
     let private composeGraph c v p s (g:Graph<'Vertex,'Label,'Edge>) =
         let g1 = (Optic.set (Map.value_ v) (Some (fromContext c))) g
-        let g2 = 
-            List.fold (fun g (value, edge) -> 
+        let g2 =
+            List.fold (fun g (value, edge) ->
                 let composedPrism = (Compose.prism (Map.key_ value) Lenses.msucc_)
                 let adjListMapping = Map.add value edge
                 let adjListInGraphMapping = Optic.map composedPrism adjListMapping
-                adjListInGraphMapping g) 
+                adjListInGraphMapping g)
                 g1 p
-        List.fold (fun g (edge, value) -> 
+        List.fold (fun g (edge, value) ->
             let composedPrism = (Compose.prism (Map.key_ value) Lenses.mpred_)
             let adjListMapping = Map.add value edge
             let adjListInGraphMapping = Optic.map composedPrism adjListMapping
-            adjListInGraphMapping g) 
+            adjListInGraphMapping g)
             g2 s
 
     let private compose c g =
         composeGraph c (Optic.get Lenses.val_ c) (Optic.get Lenses.pred_ c) (Optic.get Lenses.succ_ c) g
-      
+
     (* Decompose Graphs *)
 
     let private decomposeContext v c : Context<'Vertex,'Label,'Edge>=
@@ -121,7 +121,7 @@ module Graph =
             g2 s
 
     ///Lookup a context in the graph. If the binding exists, it returns the context and the graph minus the vertex and its edges. Raising KeyNotFoundException if no binding exists in the graph.
-    let decompose (v:'Vertex) (g: Graph<'Vertex,'Label,'Edge>) = 
+    let decompose (v:'Vertex) (g: Graph<'Vertex,'Label,'Edge>) =
         Map.find v g
         |> fun mc ->
             let c = decomposeContext v mc
@@ -129,7 +129,7 @@ module Graph =
             c, g
 
     ///Lookup a context in the graph. If the binding exists, it returns a Some value of the context and the graph minus the vertex and its edges. If it doesn't exist, returns None and the initial graph.
-    let tryDecompose (v:'Vertex) (g: Graph<'Vertex,'Label,'Edge>) = 
+    let tryDecompose (v:'Vertex) (g: Graph<'Vertex,'Label,'Edge>) =
         match Map.tryFind v g with
         | Some mc ->
             let c = decomposeContext v mc
@@ -154,7 +154,7 @@ module Graph =
     ///Creates a new, empty graph.
     let empty : Graph<'Vertex,'Label,'Edge> =
         Map.empty
-    
+
     ///Lookup a context in the graph, returning a Some value if a binding exists and None if not.
     let tryGetContext v (g:Graph<'Vertex,'Label,'Edge>) : Context<'Vertex,'Label,'Edge> option =
             Map.tryFind v g
@@ -169,17 +169,17 @@ module Graph =
     (* Iterative *)
 
     ///Maps contexts of the graph.
-    let mapContexts (mapping : Context<'Vertex,'Label,'Edge> -> 'T) (g: Graph<'Vertex,'Label,'Edge>) : Map<'Vertex,'T>= 
+    let mapContexts (mapping : Context<'Vertex,'Label,'Edge> -> 'T) (g: Graph<'Vertex,'Label,'Edge>) : Map<'Vertex,'T> =
         g
         |> Map.map (fun v mc ->  mapping (toContext v mc))
-    
+
     ///Folds over the contexts in the graph.
     let foldContexts (state: 'State) (folder : 'State -> Context<'Vertex,'Label,'Edge> -> 'State) (g: Graph<'Vertex,'Label,'Edge>) : 'State =
         g
         |> Map.fold (fun s v mc -> folder s (toContext v mc)) state
 
     ///Performs a given function on every edge of the graph.
-    let iterContexts (action : Context<'Vertex,'Label,'Edge> -> unit) (g: Graph<'Vertex,'Label,'Edge>) : unit = 
+    let iterContexts (action : Context<'Vertex,'Label,'Edge> -> unit) (g: Graph<'Vertex,'Label,'Edge>) : unit =
         g
         |> Map.iter (fun v mc ->  action (toContext v mc))
 

@@ -4,14 +4,14 @@ open Aether
 open FSharp.FGL
 
 ///Functions for vertices of undirected Graphs
-module Vertices = 
+module Vertices =
     (* Add and remove *)
 
     ///Adds a labeled vertex to the graph.
     let add ((v, l): LVertex<'Vertex,'Label>) (g:Graph<'Vertex,'Label,'Edge>) : Graph<'Vertex,'Label,'Edge> =
         Map.add v (Map.empty, l, Map.empty) g
 
-    ///Adds a list of labeled vertices to the graph.    
+    ///Adds a list of labeled vertices to the graph.
     let addMany (vertices:list<LVertex<'Vertex,'Label>>) (g:Graph<'Vertex,'Label,'Edge>) : Graph<'Vertex,'Label,'Edge> =
         List.fold (fun g vertex -> add vertex g) g vertices
 
@@ -43,15 +43,15 @@ module Vertices =
     ///Evaluates the clustering coefficient of the vertex.
     let clusteringCoefficient (context:Context<'Vertex,'Label,'Edge>) (g: Graph<'Vertex,'Label,'Edge>) : float=
         context
-        |> fun c ->     
+        |> fun c ->
             if degree c < 2 then 0.
-            else        
-                let add1IfInList acc x set = 
+            else
+                let add1IfInList acc x set =
                     if List.contains x set then acc + 1
                     else acc
                 let neighbours = neighbours c
-                let neighbourEdges = 
-                    List.fold (fun edgeAmount v' -> 
+                let neighbourEdges =
+                    List.fold (fun edgeAmount v' ->
                         (Graph.getContext v' g
                         |> fun (p',_,_,_) ->
                             (p'
@@ -62,7 +62,7 @@ module Vertices =
                 (float neighbourEdges) / (float (degree * (degree - 1)))
 
     ///Evaluates the number of vertices in the graph.
-    let count (g: Graph<'Vertex,'Label,'Edge>) : int = 
+    let count (g: Graph<'Vertex,'Label,'Edge>) : int =
         g.Count
 
 
@@ -78,16 +78,16 @@ module Vertices =
         Map.containsKey v g
 
     ///Lookup a labeled vertex in the graph. Raising KeyNotFoundException if no binding exists in the graph.
-    let find (v: 'Vertex) (g: Graph<'Vertex,'Label,'Edge>) : LVertex<'Vertex,'Label> = 
+    let find (v: 'Vertex) (g: Graph<'Vertex,'Label,'Edge>) : LVertex<'Vertex,'Label> =
         Map.find v g
         |> fun (_,l,_) -> v,l
 
     ///Lookup a labeled vertex in the graph, returning a Some value if a binding exists and None if not.
-    let tryFind (v: 'Vertex) (g: Graph<'Vertex,'Label,'Edge>) : LVertex<'Vertex,'Label> option = 
+    let tryFind (v: 'Vertex) (g: Graph<'Vertex,'Label,'Edge>) : LVertex<'Vertex,'Label> option =
         Map.tryFind v g
-        |> Option.map (fun (_, l, _) -> v, l)    
-                        
-        
+        |> Option.map (fun (_, l, _) -> v, l)
+
+
     (* Iterative *)
 
     ///Maps the vertexlabels of the graph.
@@ -110,7 +110,7 @@ module Vertices =
         g
         |> Map.iter (fun vertex (_, l, _) ->
             action vertex l)
-    
+
     let iteri (action: int -> 'Vertex -> 'Label -> unit) (g: Graph<'Vertex,'Label,'Edge>) : unit =
         let mutable i = 0
         g
@@ -118,7 +118,7 @@ module Vertices =
             action i vertex l
             i <- i + 1)
 
-    let fold (state: 'T) (folder: 'T -> 'Vertex -> 'Label -> 'T) (g: Graph<'Vertex,'Label,'Edge>) : 'T = 
+    let fold (state: 'T) (folder: 'T -> 'Vertex -> 'Label -> 'T) (g: Graph<'Vertex,'Label,'Edge>) : 'T =
         g
         |> Map.fold (fun s v (_,l,_) -> folder s v l) state
 
@@ -127,8 +127,8 @@ module Vertices =
      (* Add and remove *)
 
     ///Adds a labeled, undirected edge to the graph.
-    let add ((v1, v2, edge): LEdge<'Vertex,'Edge>) (g: Graph<'Vertex,'Label,'Edge>) =
-        let g1 = 
+    let add ((v1, v2, edge): LEdge<'Vertex,'Edge>) (g: Graph<'Vertex,'Label,'Edge>) : Graph<'Vertex,'Label,'Edge> =
+        let g1 =
             let composedPrism = Compose.prism (Map.key_ v1) Lenses.msucc_
             let adjListMapping = Map.add v2 edge
             (Optic.map composedPrism adjListMapping) g
@@ -137,27 +137,27 @@ module Vertices =
         (Optic.map composedPrism adjListMapping) g1
 
     ///Adds a list of labeled, undirected edges to the graph.
-    let addMany (edges : list<LEdge<'Vertex,'Edge>>) (g: Graph<'Vertex,'Label,'Edge>) =
+    let addMany (edges : list<LEdge<'Vertex,'Edge>>) (g: Graph<'Vertex,'Label,'Edge>) : Graph<'Vertex,'Label,'Edge>=
         List.fold (fun g e -> add e g) g edges
 
     ///Removes an edge from the graph.
-    let remove ((v1, v2): Edge<'Vertex>) (g: Graph<'Vertex,'Label,'Edge>) =
-        let g1 = 
+    let remove ((v1, v2): Edge<'Vertex>) (g: Graph<'Vertex,'Label,'Edge>) : Graph<'Vertex,'Label,'Edge> =
+        let g1 =
             let composedPrism = Compose.prism (Map.key_ v1) Lenses.msucc_
             let adjListMapping = Map.remove v2
             (Optic.map composedPrism adjListMapping) g
         let composedPrism = Compose.prism (Map.key_ v2) Lenses.msucc_
         let adjListMapping = Map.remove v1
         (Optic.map composedPrism adjListMapping) g1
-                
+
     ///Removes a list of edges from the graph.
-    let removeMany (edges : list<Edge<'Vertex>>) (g: Graph<'Vertex,'Label,'Edge>) =
+    let removeMany (edges : list<Edge<'Vertex>>) (g: Graph<'Vertex,'Label,'Edge>) : Graph<'Vertex,'Label,'Edge> =
         List.fold (fun g e -> remove e g) g edges
 
     (* Properties *)
 
     ///Evaluates the number of edges in the graph.
-    let count (g: Graph<'Vertex,'Label,'Edge>) : int = 
+    let count (g: Graph<'Vertex,'Label,'Edge>) : int =
             Map.toArray g
             |> Array.fold (fun c (_,(_,_,s)) -> c + ((Map.toList s) |> List.length)) 0
             |> fun x -> x / 2
@@ -189,30 +189,30 @@ module Vertices =
     ///Maps edgelabels of the graph.
     let map (mapping: 'Vertex -> 'Vertex -> 'Edge -> 'REdge) (g:Graph<'Vertex,'Label,'Edge>) : Graph<'Vertex,'Label,'REdge>=
             g
-            |> Map.map (fun vertex (p, l, s) -> 
+            |> Map.map (fun vertex (p, l, s) ->
                 Map.map (fun pvertex edge -> mapping pvertex vertex edge) p,
                 l,
-                Map.map (fun svertex edge -> mapping vertex svertex edge) s)  
+                Map.map (fun svertex edge -> mapping vertex svertex edge) s)
 
-    ///Performs a given function on every edge of the graph.                
+    ///Performs a given function on every edge of the graph.
     let iter (action: 'Vertex -> 'Vertex -> 'Edge -> unit) (graph:Graph<'Vertex,'Label,'Edge>) : unit =
         let rec recurse g =
             match Graph.decomposeFirst g with
-            | (Some c,g') -> 
+            | (Some c,g') ->
                 c
-                |> fun (_,v,_,s) -> 
+                |> fun (_,v,_,s) ->
                     List.iter (fun (v',e) -> action v v' e) s
                     recurse g'
             | (None,_) -> ()
-        recurse graph   
-               
-    ///Performs a given function on every edge of the graph, which also receives an ascending integer index.                                    
+        recurse graph
+
+    ///Performs a given function on every edge of the graph, which also receives an ascending integer index.
     let iteri (action: int -> 'Vertex -> 'Vertex -> 'Edge -> unit) (graph:Graph<'Vertex,'Label,'Edge>) : unit =
         let rec recurse i g =
             match Graph.decomposeFirst g with
-            | (Some c,g') -> 
+            | (Some c,g') ->
                 c
-                |> fun (_,v,_,s) -> 
+                |> fun (_,v,_,s) ->
                     List.iteri (fun j (v',e) -> action (j+i) v v' e) s
                     recurse (i+s.Length) g'
             | (None,_) -> ()
@@ -221,11 +221,11 @@ module Vertices =
     let fold (folder : 'State -> 'Vertex -> 'Vertex -> 'Edge -> 'State) (state: 'State) (graph:Graph<'Vertex,'Label,'Edge>) : 'State =
         let rec recurse st g =
             match Graph.decomposeFirst g with
-            | (Some c,g') -> 
+            | (Some c,g') ->
                 c
                 |> fun (_,v,_,s) ->
                     List.fold (fun state (v',e) -> folder state v v' e) st s
-                    |> fun st -> 
+                    |> fun st ->
                         recurse st g'
             | (None,_) -> st
         recurse state graph
@@ -237,21 +237,21 @@ module Graph =
         Graph.empty
         |> Vertices.addMany vertices
         |> Edges.addMany edges
-    
+
     ///Transforms a graph into a adjacency matrix of its edges. If there is no edge between two vertices, the noEdgeValue is used.
     let inline toAdjacencyMatrix (g:Graph<'Vertex,'Label,'Edge>) =
         //Create a hashmap of the vertices
         let hashMap = System.Collections.Generic.Dictionary<'Vertex,int>()
-        let n = 
-            let rec loop g i= 
+        let n =
+            let rec loop g i=
                 match Graph.decomposeFirst g with
-                | Some (_,v,_,_),g -> 
+                | Some (_,v,_,_),g ->
                     hashMap.[v] <- i
-                    loop g (i+1)        
+                    loop g (i+1)
                 | None, _ -> i+1
             loop g 0
         //Create the matrix
-        let adj : 'Edge [][] = Array.init n (fun _ -> 
+        let adj : 'Edge [][] = Array.init n (fun _ ->
             Array.zeroCreate n)
         //Fill the matrix with values by using the hashmap as an index finder
         Edges.iter (fun v1 v2 e -> adj.[hashMap.Item v1].[hashMap.Item v2] <- e) g
@@ -261,16 +261,16 @@ module Graph =
     let inline toAdjacencyMatrixBy (projection : 'Edge -> 'REdge) (g:Graph<'Vertex,'Label,'Edge>) =
         //Create a hashmap of the vertices
         let hashMap = System.Collections.Generic.Dictionary<'Vertex,int>()
-        let n = 
-            let rec loop g i= 
+        let n =
+            let rec loop g i=
                 match Graph.decomposeFirst g with
-                | Some (_,v,_,_),g -> 
+                | Some (_,v,_,_),g ->
                     hashMap.[v] <- i
-                    loop g (i+1)        
+                    loop g (i+1)
                 | None, _ -> i+1
             loop g 0
         //Create the matrix
-        let adj : 'REdge [][] = Array.init n (fun _ -> 
+        let adj : 'REdge [][] = Array.init n (fun _ ->
             Array.zeroCreate n)
         //Fill the matrix with values by using the hashmap as an index finder
         Edges.iter (fun v1 v2 e -> adj.[hashMap.Item v1].[hashMap.Item v2] <- projection e) g
